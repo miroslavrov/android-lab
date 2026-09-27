@@ -25,8 +25,10 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.SignalWifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +61,12 @@ import com.example.myapplication.data.SearchHistory
 import com.example.myapplication.data.mockTracks
 import com.example.myapplication.model.Track
 
+enum class SearchScreenState {
+    CONTENT,
+    NOTHING_FOUND,
+    NETWORK_ERROR
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -68,6 +76,7 @@ fun SearchScreen(
     val searchHistory = remember { SearchHistory(context) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var historyTracks by remember { mutableStateOf(searchHistory.getHistory()) }
+    var screenState by remember { mutableStateOf(SearchScreenState.CONTENT) }
     val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
 
@@ -140,7 +149,10 @@ fun SearchScreen(
                         }
                         BasicTextField(
                             value = searchQuery,
-                            onValueChange = { searchQuery = it },
+                            onValueChange = {
+                                searchQuery = it
+                                screenState = SearchScreenState.CONTENT
+                            },
                             singleLine = true,
                             textStyle = TextStyle(
                                 fontSize = 16.sp,
@@ -160,6 +172,7 @@ fun SearchScreen(
                                 .size(18.dp)
                                 .clickable {
                                     searchQuery = ""
+                                    screenState = SearchScreenState.CONTENT
                                     focusManager.clearFocus()
                                 }
                         )
@@ -169,22 +182,136 @@ fun SearchScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (searchQuery.isEmpty() && historyTracks.isNotEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Вы искали",
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    )
-
-                    LazyColumn(
-                        modifier = Modifier.weight(1f)
+            when {
+                screenState == SearchScreenState.NETWORK_ERROR -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 64.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top
                     ) {
-                        items(historyTracks) { track ->
+                        Icon(
+                            imageVector = Icons.Default.SignalWifiOff,
+                            contentDescription = "Проблема со связью",
+                            modifier = Modifier.size(96.dp),
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Проблема со связью",
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Загрузка не удалась. Проверьте подключение к интернету",
+                            fontSize = 14.sp,
+                            color = Color(0xFFAEAFB4),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { screenState = SearchScreenState.CONTENT },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF3772E7),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(54.dp),
+                            modifier = Modifier.height(44.dp)
+                        ) {
+                            Text(
+                                text = "Обновить",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                searchQuery.isEmpty() && historyTracks.isNotEmpty() -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Вы искали",
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        )
+
+                        LazyColumn(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            items(historyTracks) { track ->
+                                TrackItem(
+                                    track = track,
+                                    isDark = isDark,
+                                    onClick = {
+                                        searchHistory.addTrack(track)
+                                        historyTracks = searchHistory.getHistory()
+                                    }
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                searchHistory.clearHistory()
+                                historyTracks = emptyList()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF3772E7),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(54.dp),
+                            modifier = Modifier
+                                .padding(vertical = 16.dp)
+                                .height(44.dp)
+                        ) {
+                            Text(
+                                text = "Очистить историю",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                searchQuery.isNotEmpty() && filteredTracks.isEmpty() -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 64.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SearchOff,
+                            contentDescription = "Ничего не нашлось",
+                            modifier = Modifier.size(96.dp),
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Ничего не нашлось",
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(filteredTracks) { track ->
                             TrackItem(
                                 track = track,
                                 isDark = isDark,
@@ -194,65 +321,6 @@ fun SearchScreen(
                                 }
                             )
                         }
-                    }
-
-                    Button(
-                        onClick = {
-                            searchHistory.clearHistory()
-                            historyTracks = emptyList()
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF3772E7),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(54.dp),
-                        modifier = Modifier
-                            .padding(vertical = 16.dp)
-                            .height(44.dp)
-                    ) {
-                        Text(
-                            text = "Очистить историю",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            } else if (searchQuery.isNotEmpty() && filteredTracks.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 64.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.SearchOff,
-                        contentDescription = "Ничего не найдено",
-                        modifier = Modifier.size(96.dp),
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Ничего не найдено",
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(filteredTracks) { track ->
-                        TrackItem(
-                            track = track,
-                            isDark = isDark,
-                            onClick = {
-                                searchHistory.addTrack(track)
-                                historyTracks = searchHistory.getHistory()
-                            }
-                        )
                     }
                 }
             }
