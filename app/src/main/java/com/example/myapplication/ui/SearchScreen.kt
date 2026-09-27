@@ -1,5 +1,6 @@
 package com.example.myapplication.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,17 +32,20 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.data.SearchHistory
 import com.example.myapplication.data.mockTracks
 import com.example.myapplication.model.Track
 
@@ -48,7 +54,10 @@ import com.example.myapplication.model.Track
 fun SearchScreen(
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val searchHistory = remember { SearchHistory(context) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var historyTracks by remember { mutableStateOf(searchHistory.getHistory()) }
     val focusManager = LocalFocusManager.current
 
     val filteredTracks = if (searchQuery.isEmpty()) {
@@ -123,7 +132,56 @@ fun SearchScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (searchQuery.isNotEmpty() && filteredTracks.isEmpty()) {
+            if (searchQuery.isEmpty() && historyTracks.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Вы искали",
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(vertical = 12.dp)
+                            .align(Alignment.CenterHorizontally)
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(historyTracks) { track ->
+                            TrackItem(
+                                track = track,
+                                onClick = {
+                                    searchHistory.addTrack(track)
+                                    historyTracks = searchHistory.getHistory()
+                                }
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            searchHistory.clearHistory()
+                            historyTracks = emptyList()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3772E7),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .padding(vertical = 16.dp)
+                            .height(48.dp)
+                    ) {
+                        Text(
+                            text = "Очистить историю",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            } else if (searchQuery.isNotEmpty() && filteredTracks.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -151,7 +209,13 @@ fun SearchScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredTracks) { track ->
-                        TrackItem(track = track)
+                        TrackItem(
+                            track = track,
+                            onClick = {
+                                searchHistory.addTrack(track)
+                                historyTracks = searchHistory.getHistory()
+                            }
+                        )
                     }
                 }
             }
@@ -160,10 +224,14 @@ fun SearchScreen(
 }
 
 @Composable
-private fun TrackItem(track: Track) {
+private fun TrackItem(
+    track: Track,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
