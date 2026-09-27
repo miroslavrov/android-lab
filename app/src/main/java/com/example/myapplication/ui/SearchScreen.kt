@@ -2,6 +2,7 @@ package com.example.myapplication.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,7 @@ fun SearchScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var historyTracks by remember { mutableStateOf(searchHistory.getHistory()) }
     val focusManager = LocalFocusManager.current
+    val isDark = isSystemInDarkTheme()
 
     val filteredTracks = if (searchQuery.isEmpty()) {
         mockTracks
@@ -112,7 +114,7 @@ fun SearchScreen(
                     .height(36.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(
-                        if (MaterialTheme.colorScheme.background == Color.White) Color(0xFFE6E8EB) else Color(0xFF2C2C2E)
+                        if (isDark) Color(0xFF2C2C2E) else Color(0xFFE6E8EB)
                     )
                     .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.CenterStart
@@ -185,6 +187,7 @@ fun SearchScreen(
                         items(historyTracks) { track ->
                             TrackItem(
                                 track = track,
+                                isDark = isDark,
                                 onClick = {
                                     searchHistory.addTrack(track)
                                     historyTracks = searchHistory.getHistory()
@@ -244,6 +247,7 @@ fun SearchScreen(
                     items(filteredTracks) { track ->
                         TrackItem(
                             track = track,
+                            isDark = isDark,
                             onClick = {
                                 searchHistory.addTrack(track)
                                 historyTracks = searchHistory.getHistory()
@@ -259,6 +263,7 @@ fun SearchScreen(
 @Composable
 private fun TrackItem(
     track: Track,
+    isDark: Boolean,
     onClick: () -> Unit
 ) {
     Row(
@@ -273,7 +278,7 @@ private fun TrackItem(
             modifier = Modifier
                 .size(45.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(Color(0xFFE6E8EB)),
+                .background(if (isDark) Color(0xFF2C2C2E) else Color(0xFFE6E8EB)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
