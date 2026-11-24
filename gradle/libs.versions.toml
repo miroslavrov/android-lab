@@ -13,7 +13,7 @@ coroutines = "1.10.2"
 kotlin = "2.2.10"
 composeBom = "2026.02.01"
 room = "2.7.0"
-ksp = "2.2.10-2.0.2"
+ksp = "2.3.14"
 datastore = "1.1.7"
 
 [libraries]
