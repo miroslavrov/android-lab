@@ -101,6 +101,7 @@ class SearchViewModelTest {
     ): SearchViewModel {
         val repository = object : TracksRepository {
             override suspend fun searchTracks(query: String) = search(query)
+            override fun getTrack(trackId: String): Track? = null
         }
         val history = object : TrackHistory {
             override suspend fun getHistory(): List<Track> = emptyList()

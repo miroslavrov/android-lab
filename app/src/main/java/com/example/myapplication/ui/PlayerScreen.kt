@@ -3,7 +3,6 @@ package com.example.myapplication.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,12 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlaylistAdd
@@ -69,6 +66,7 @@ fun PlayerScreen(
 ) {
     val track by viewModel.track.collectAsStateWithLifecycle()
     val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
+    val playbackFailed by viewModel.playbackFailed.collectAsStateWithLifecycle()
     val positionMillis by viewModel.positionMillis.collectAsStateWithLifecycle()
     val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
@@ -109,21 +107,15 @@ fun PlayerScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            Box(
+            TrackArtwork(
+                url = track?.artworkUrl,
+                isDark = isDark,
+                cornerRadius = 8.dp,
+                placeholderSize = 120.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (isDark) Color(0xFF2C2C2E) else Color(0xFFE6E8EB)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = Color(0xFFAEAFB4),
-                    modifier = Modifier.size(120.dp)
-                )
-            }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -169,7 +161,7 @@ fun PlayerScreen(
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = stringResource(R.string.player_play),
+                        contentDescription = stringResource(if (isPlaying) R.string.player_pause else R.string.player_play),
                         tint = MaterialTheme.colorScheme.background,
                         modifier = Modifier.size(48.dp)
                     )
@@ -195,6 +187,14 @@ fun PlayerScreen(
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onBackground
             )
+
+            if (playbackFailed) {
+                Text(
+                    text = stringResource(R.string.player_retry_message),
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 

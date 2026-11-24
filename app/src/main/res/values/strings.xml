@@ -22,6 +22,8 @@
     <string name="search_retry">Обновить</string>
     <string name="search_track_separator" translatable="false">" • "</string>
     <string name="player_play">Воспроизвести</string>
+    <string name="player_pause">Пауза</string>
+    <string name="player_retry_message">Не удалось воспроизвести трек. Нажмите кнопку воспроизведения, чтобы повторить.</string>
     <string name="player_add_to_playlist">Добавить в плейлист</string>
     <string name="player_favorite">Добавить в избранное</string>
     <string name="player_duration">Длительность</string>

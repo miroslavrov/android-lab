@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.myapplication.domain.Track
 
 @Composable
 fun PlaylistHost(
@@ -12,6 +13,9 @@ fun PlaylistHost(
     onDarkThemeChange: (Boolean) -> Unit
 ) {
     val onBack: () -> Unit = { navController.popBackStack() }
+    val onOpenPlayer: (Track) -> Unit = { track ->
+        navController.navigate("${Screen.PLAYER.name}/${track.trackId}")
+    }
 
     NavHost(navController = navController, startDestination = Screen.MAIN.name) {
         composable(Screen.MAIN.name) {
@@ -23,7 +27,7 @@ fun PlaylistHost(
             SearchScreen(
                 onBack = onBack,
                 isDark = isDarkTheme,
-                onOpenPlayer = { track -> navController.navigate("${Screen.PLAYER.name}/${track.trackId}") }
+                onOpenPlayer = onOpenPlayer
             )
         }
         composable("${Screen.PLAYER.name}/{trackId}") { entry ->
@@ -37,7 +41,7 @@ fun PlaylistHost(
             MediaLibraryScreen(
                 onBack = onBack,
                 isDark = isDarkTheme,
-                onOpenPlayer = { track -> navController.navigate("${Screen.PLAYER.name}/${track.trackId}") },
+                onOpenPlayer = onOpenPlayer,
                 onOpenPlaylist = { id -> navController.navigate("${Screen.PLAYLIST_DETAILS.name}/$id") },
                 onCreatePlaylist = { navController.navigate(Screen.CREATE_PLAYLIST.name) }
             )
@@ -49,7 +53,8 @@ fun PlaylistHost(
             PlaylistDetailsScreen(
                 playlistId = entry.arguments?.getString("playlistId")?.toLongOrNull() ?: 0L,
                 onBack = onBack,
-                isDark = isDarkTheme
+                isDark = isDarkTheme,
+                onOpenPlayer = onOpenPlayer
             )
         }
         composable(Screen.SETTINGS.name) {

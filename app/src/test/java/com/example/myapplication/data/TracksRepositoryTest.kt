@@ -4,10 +4,19 @@ import com.example.myapplication.domain.NetworkClient
 import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TracksRepositoryTest {
+    @Test
+    fun opensTrackByIdWithoutHistoryOrConnectivity() {
+        val repository = TracksRepositoryImpl(Storage(), NetworkClient { false })
+
+        assertEquals("Smells Like Teen Spirit", repository.getTrack("1")?.trackName)
+        assertNull(repository.getTrack("unknown"))
+    }
+
     @Test
     fun matchesArtistAndTrackNameIgnoringCase() = runTest {
         val repository = TracksRepositoryImpl(Storage(), NetworkClient { true })

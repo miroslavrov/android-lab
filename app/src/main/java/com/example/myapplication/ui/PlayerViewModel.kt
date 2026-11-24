@@ -8,7 +8,8 @@ import com.example.myapplication.domain.FavoritesRepository
 import com.example.myapplication.domain.Playlist
 import com.example.myapplication.domain.PlaylistsRepository
 import com.example.myapplication.domain.Track
-import com.example.myapplication.domain.TrackHistory
+import com.example.myapplication.domain.TracksRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,9 +18,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class PlayerViewModel(
-    private val trackHistory: TrackHistory,
+    private val tracksRepository: TracksRepository,
     private val favoritesRepository: FavoritesRepository,
-    playlistsRepository: PlaylistsRepository
+    private val playlistsRepository: PlaylistsRepository
 ) : ViewModel() {
     private val _track = MutableStateFlow<Track?>(null)
     val track = _track.asStateFlow()
@@ -30,77 +31,109 @@ class PlayerViewModel(
     private val _positionMillis = MutableStateFlow(0)
     val positionMillis = _positionMillis.asStateFlow()
 
+    private val _playbackFailed = MutableStateFlow(false)
+    val playbackFailed = _playbackFailed.asStateFlow()
+
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite = _isFavorite.asStateFlow()
 
     val playlists: StateFlow<List<Playlist>> = playlistsRepository.getPlaylists()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val playlistsRepositoryRef = playlistsRepository
-
+    private var favoriteJob: Job? = null
     private var mediaPlayer: MediaPlayer? = null
     private var prepared = false
 
     fun load(trackId: String) {
         if (_track.value?.trackId == trackId) return
 
+        favoriteJob?.cancel()
         releasePlayer()
-        viewModelScope.launch {
-            _track.value = trackHistory.getHistory().firstOrNull { it.trackId == trackId }
+        _isFavorite.value = false
+        _playbackFailed.value = false
 
-            launch {
-                favoritesRepository.isFavorite(trackId).collect { _isFavorite.value = it }
-            }
+        val track = tracksRepository.getTrack(trackId)
+        _track.value = track
+        if (track == null) return
 
-            val url = _track.value?.previewUrl.orEmpty()
-            if (url.isEmpty()) return@launch
+        favoriteJob = viewModelScope.launch {
+            favoritesRepository.isFavorite(trackId).collect { _isFavorite.value = it }
+        }
+        preparePlayer(track)
+    }
 
-            runCatching {
-                mediaPlayer = MediaPlayer().apply {
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
-                            .build()
-                    )
-                    setDataSource(url)
-                    setOnPreparedListener {
-                        prepared = true
-                        start()
-                        _isPlaying.value = true
-                    }
-                    setOnCompletionListener {
-                        _isPlaying.value = false
-                        _positionMillis.value = 0
-                        seekTo(0)
-                    }
-                    setOnErrorListener { _, _, _ ->
-                        prepared = false
-                        _isPlaying.value = false
-                        true
-                    }
-                    prepareAsync()
+    private fun preparePlayer(track: Track) {
+        if (track.previewUrl.isBlank()) {
+            _playbackFailed.value = true
+            return
+        }
+
+        _playbackFailed.value = false
+        runCatching {
+            val player = MediaPlayer()
+            mediaPlayer = player
+            player.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .build()
+            )
+            player.setDataSource(track.previewUrl)
+            player.setOnPreparedListener { readyPlayer ->
+                if (readyPlayer === mediaPlayer) {
+                    prepared = true
+                    play(readyPlayer)
                 }
             }
-        }
+            player.setOnCompletionListener {
+                if (it === mediaPlayer) {
+                    _isPlaying.value = false
+                    _positionMillis.value = 0
+                    runCatching { it.seekTo(0) }.onFailure { playbackError() }
+                }
+            }
+            player.setOnErrorListener { failedPlayer, _, _ ->
+                if (failedPlayer === mediaPlayer) playbackError()
+                true
+            }
+            player.prepareAsync()
+        }.onFailure { playbackError() }
     }
 
     fun togglePlayPause() {
-        val player = mediaPlayer ?: return
+        val player = mediaPlayer
+        if (player == null) {
+            _track.value?.let(::preparePlayer)
+            return
+        }
         if (!prepared) return
-        runCatching {
-            if (player.isPlaying) {
-                player.pause()
-                _isPlaying.value = false
-            } else {
-                player.start()
-                _isPlaying.value = true
-            }
+
+        if (_isPlaying.value) {
+            runCatching { player.pause() }
+                .onSuccess { _isPlaying.value = false }
+                .onFailure { playbackError() }
+        } else {
+            play(player)
         }
     }
 
     fun refreshPosition() {
-        _positionMillis.value = mediaPlayer?.takeIf { prepared }?.currentPosition ?: 0
+        val player = mediaPlayer ?: return
+        if (!prepared) return
+        runCatching { player.currentPosition }
+            .onSuccess { _positionMillis.value = it }
+            .onFailure { playbackError() }
+    }
+
+    private fun play(player: MediaPlayer) {
+        runCatching { player.start() }
+            .onSuccess { _isPlaying.value = true }
+            .onFailure { playbackError() }
+    }
+
+    private fun playbackError() {
+        releasePlayer()
+        _playbackFailed.value = true
     }
 
     fun toggleFavorite() {
@@ -110,12 +143,13 @@ class PlayerViewModel(
 
     fun addToPlaylist(playlistId: Long) {
         val current = _track.value ?: return
-        viewModelScope.launch { playlistsRepositoryRef.addTrack(playlistId, current) }
+        viewModelScope.launch { playlistsRepository.addTrack(playlistId, current) }
     }
 
     private fun releasePlayer() {
-        mediaPlayer?.release()
+        val player = mediaPlayer
         mediaPlayer = null
+        player?.release()
         prepared = false
         _isPlaying.value = false
         _positionMillis.value = 0

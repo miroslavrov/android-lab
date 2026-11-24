@@ -10,6 +10,9 @@ internal class TracksRepositoryImpl(
     private val storage: Storage,
     private val networkClient: NetworkClient
 ) : TracksRepository {
+    override fun getTrack(trackId: String): Track? =
+        storage.tracks.firstOrNull { it.trackId == trackId }?.toTrack()
+
     override suspend fun searchTracks(query: String): List<Track> {
         val expression = query.trim()
         if (expression.isEmpty()) return emptyList()

@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.SignalWifiOff
@@ -326,20 +325,14 @@ private fun TrackItem(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
+        TrackArtwork(
+            url = track.artworkUrl,
+            isDark = isDark,
+            cornerRadius = 2.dp,
+            placeholderSize = 24.dp,
             modifier = Modifier
                 .size(45.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(if (isDark) Color(0xFF2C2C2E) else Color(0xFFE6E8EB)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.MusicNote,
-                contentDescription = null,
-                tint = Color(0xFFAEAFB4),
-                modifier = Modifier.size(24.dp)
-            )
-        }
+        )
 
         Spacer(modifier = Modifier.width(12.dp))
 
