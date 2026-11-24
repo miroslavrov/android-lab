@@ -1,7 +1,9 @@
 package com.example.myapplication.ui
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,9 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,13 +45,28 @@ fun SettingsScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val shareTitle = stringResource(R.string.settings_share)
+    val shareUrl = stringResource(R.string.settings_share_url)
+    val email = stringResource(R.string.developer_email)
+    val emailSubject = stringResource(R.string.settings_email_subject)
+    val emailBody = stringResource(R.string.settings_email_body)
+    val agreementUrl = stringResource(R.string.settings_agreement_url)
+    val noExternalApp = stringResource(R.string.settings_no_external_app)
+
+    fun openExternalApp(intent: Intent) {
+        try {
+            context.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(context, noExternalApp, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Настройки",
+                        text = stringResource(R.string.settings_title),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -56,7 +75,7 @@ fun SettingsScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Назад"
+                            contentDescription = stringResource(R.string.navigate_back)
                         )
                     }
                 }
@@ -77,7 +96,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Тёмная тема",
+                    text = stringResource(R.string.settings_dark_theme),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -92,33 +111,30 @@ fun SettingsScreen(
             }
 
             SettingsItem(
-                title = "Поделиться приложением",
+                title = shareTitle,
                 icon = Icons.Default.Share,
                 onClick = {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, "https://practicum.yandex.ru/android-developer/")
+                        putExtra(Intent.EXTRA_TEXT, shareUrl)
                     }
-                    context.startActivity(Intent.createChooser(intent, "Поделиться приложением"))
+                    openExternalApp(Intent.createChooser(intent, shareTitle))
                 }
             )
 
             SettingsItem(
-                title = "Написать в поддержку",
+                title = stringResource(R.string.settings_contact_developer),
                 icon = Icons.Default.Email,
                 onClick = {
-                    val intent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:")
-                        putExtra(Intent.EXTRA_EMAIL, arrayOf("support@playlistmaker.com"))
-                        putExtra(Intent.EXTRA_SUBJECT, "Сообщение разработчикам Playlist Maker")
-                        putExtra(Intent.EXTRA_TEXT, "Спасибо разработчикам за приложение!")
-                    }
-                    context.startActivity(intent)
+                    val mailto = Uri.parse(
+                        "mailto:${Uri.encode(email)}?subject=${Uri.encode(emailSubject)}&body=${Uri.encode(emailBody)}"
+                    )
+                    openExternalApp(Intent(Intent.ACTION_SENDTO, mailto))
                 }
             )
 
             SettingsItem(
-                title = "Пользовательское соглашение",
+                title = stringResource(R.string.settings_agreement),
                 icon = Icons.Default.Info,
                 onClick = {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://yandex.ru/legal/practicum_offer/"))
@@ -150,7 +166,7 @@ private fun SettingsItem(
         )
         Icon(
             imageVector = icon,
-            contentDescription = title,
+            contentDescription = null,
             tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
     }
