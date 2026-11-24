@@ -2,7 +2,6 @@ package com.example.myapplication.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,12 +24,12 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.SignalWifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,15 +40,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -57,36 +57,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.data.SearchHistory
-import com.example.myapplication.data.mockTracks
-import com.example.myapplication.model.Track
-
-enum class SearchScreenState {
-    CONTENT,
-    NOTHING_FOUND,
-    NETWORK_ERROR
-}
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.myapplication.R
+import com.example.myapplication.domain.Track
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isDark: Boolean,
+    viewModel: SearchViewModel = koinViewModel()
 ) {
-    val context = LocalContext.current
-    val searchHistory = remember { SearchHistory(context) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    var historyTracks by remember { mutableStateOf(searchHistory.getHistory()) }
-    var screenState by remember { mutableStateOf(SearchScreenState.CONTENT) }
+    val searchState by viewModel.searchState.collectAsStateWithLifecycle()
+    val historyTracks by viewModel.history.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
-    val isDark = isSystemInDarkTheme()
-
-    val filteredTracks = if (searchQuery.isEmpty()) {
-        mockTracks
-    } else {
-        mockTracks.filter { track ->
-            track.trackName.contains(searchQuery, ignoreCase = true) ||
-                    track.artistName.contains(searchQuery, ignoreCase = true)
-        }
+    val onSearch = {
+        focusManager.clearFocus()
+        viewModel.search(searchQuery)
     }
 
     Scaffold(
@@ -94,7 +83,7 @@ fun SearchScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Поиск",
+                        text = stringResource(R.string.search_title),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -103,7 +92,7 @@ fun SearchScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Назад"
+                            contentDescription = stringResource(R.string.navigate_back)
                         )
                     }
                 }
@@ -116,7 +105,6 @@ fun SearchScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
-            // Figma Search Input Box
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -134,15 +122,21 @@ fun SearchScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.search_action),
                         tint = Color(0xFFAEAFB4),
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clickable(
+                                enabled = searchQuery.isNotBlank(),
+                                role = Role.Button,
+                                onClick = onSearch
+                            )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Box(modifier = Modifier.weight(1f)) {
                         if (searchQuery.isEmpty()) {
                             Text(
-                                text = "Поиск",
+                                text = stringResource(R.string.search_title),
                                 color = Color(0xFFAEAFB4),
                                 fontSize = 16.sp
                             )
@@ -151,28 +145,28 @@ fun SearchScreen(
                             value = searchQuery,
                             onValueChange = {
                                 searchQuery = it
-                                screenState = SearchScreenState.CONTENT
+                                viewModel.resetSearch()
                             },
                             singleLine = true,
                             textStyle = TextStyle(
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onBackground
                             ),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { onSearch() }),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                     if (searchQuery.isNotEmpty()) {
                         Icon(
                             imageVector = Icons.Default.Clear,
-                            contentDescription = "Очистить",
+                            contentDescription = stringResource(R.string.search_clear),
                             tint = Color(0xFFAEAFB4),
                             modifier = Modifier
                                 .size(18.dp)
-                                .clickable {
+                                .clickable(role = Role.Button) {
                                     searchQuery = ""
-                                    screenState = SearchScreenState.CONTENT
+                                    viewModel.resetSearch()
                                     focusManager.clearFocus()
                                 }
                         )
@@ -182,149 +176,140 @@ fun SearchScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            when {
-                screenState == SearchScreenState.NETWORK_ERROR -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 64.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Top
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SignalWifiOff,
-                            contentDescription = "Проблема со связью",
-                            modifier = Modifier.size(96.dp),
-                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Проблема со связью",
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Загрузка не удалась. Проверьте подключение к интернету",
-                            fontSize = 14.sp,
-                            color = Color(0xFFAEAFB4),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 24.dp)
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = { screenState = SearchScreenState.CONTENT },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF3772E7),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(54.dp),
-                            modifier = Modifier.height(44.dp)
+            when (val state = searchState) {
+                SearchState.Initial -> {
+                    if (searchQuery.isEmpty() && historyTracks.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Обновить",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
+                                text = stringResource(R.string.search_history),
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(vertical = 12.dp)
                             )
-                        }
-                    }
-                }
-
-                searchQuery.isEmpty() && historyTracks.isNotEmpty() -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Вы искали",
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(vertical = 12.dp)
-                        )
-
-                        LazyColumn(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            items(historyTracks) { track ->
-                                TrackItem(
-                                    track = track,
-                                    isDark = isDark,
-                                    onClick = {
-                                        searchHistory.addTrack(track)
-                                        historyTracks = searchHistory.getHistory()
-                                    }
-                                )
-                            }
-                        }
-
-                        Button(
-                            onClick = {
-                                searchHistory.clearHistory()
-                                historyTracks = emptyList()
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF3772E7),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(54.dp),
-                            modifier = Modifier
-                                .padding(vertical = 16.dp)
-                                .height(44.dp)
-                        ) {
-                            Text(
-                                text = "Очистить историю",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-
-                searchQuery.isNotEmpty() && filteredTracks.isEmpty() -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 64.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Top
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SearchOff,
-                            contentDescription = "Ничего не нашлось",
-                            modifier = Modifier.size(96.dp),
-                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Ничего не нашлось",
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                }
-
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(filteredTracks) { track ->
-                            TrackItem(
-                                track = track,
+                            TrackList(
+                                tracks = historyTracks,
                                 isDark = isDark,
-                                onClick = {
-                                    searchHistory.addTrack(track)
-                                    historyTracks = searchHistory.getHistory()
-                                }
+                                onTrackClick = viewModel::rememberTrack,
+                                modifier = Modifier.weight(1f)
+                            )
+                            SearchButton(
+                                text = stringResource(R.string.search_clear_history),
+                                onClick = viewModel::clearHistory,
+                                modifier = Modifier.padding(vertical = 16.dp)
                             )
                         }
                     }
+                }
+
+                SearchState.Searching -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                is SearchState.Success -> {
+                    if (state.tracks.isEmpty()) {
+                        SearchMessage(
+                            icon = Icons.Default.SearchOff,
+                            title = stringResource(R.string.search_no_results)
+                        )
+                    } else {
+                        TrackList(
+                            tracks = state.tracks,
+                            isDark = isDark,
+                            onTrackClick = viewModel::rememberTrack,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+
+                SearchState.Fail -> {
+                    SearchMessage(
+                        icon = Icons.Default.SignalWifiOff,
+                        title = stringResource(R.string.search_connection_title),
+                        description = stringResource(R.string.search_connection_description),
+                        onRetry = onSearch
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TrackList(
+    tracks: List<Track>,
+    isDark: Boolean,
+    onTrackClick: (Track) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier = modifier) {
+        items(tracks, key = Track::trackId) { track ->
+            TrackItem(track, isDark, onClick = { onTrackClick(track) })
+        }
+    }
+}
+
+@Composable
+private fun SearchMessage(
+    icon: ImageVector,
+    title: String,
+    description: String? = null,
+    onRetry: (() -> Unit)? = null
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = 64.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(96.dp),
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+        )
+        Text(
+            text = title,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center
+        )
+        if (description != null) {
+            Text(
+                text = description,
+                fontSize = 14.sp,
+                color = Color(0xFFAEAFB4),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 24.dp)
+            )
+        }
+        if (onRetry != null) {
+            SearchButton(text = stringResource(R.string.search_retry), onClick = onRetry)
+        }
+    }
+}
+
+@Composable
+private fun SearchButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF3772E7),
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(54.dp),
+        modifier = modifier.height(44.dp)
+    ) {
+        Text(text = text, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -341,7 +326,6 @@ private fun TrackItem(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Track Artwork Placeholder Container (Figma 45dp x 45dp)
         Box(
             modifier = Modifier
                 .size(45.dp)
@@ -382,7 +366,7 @@ private fun TrackItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = " • ",
+                    text = stringResource(R.string.search_track_separator),
                     fontSize = 13.sp,
                     color = Color(0xFFAEAFB4)
                 )
