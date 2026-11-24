@@ -34,8 +34,7 @@ internal class PlaylistsRepositoryImpl(
         dao.insertPlaylist(PlaylistEntity(name = name, description = description))
 
     override suspend fun deletePlaylist(playlistId: Long) {
-        dao.deleteTracksOfPlaylist(playlistId)
-        dao.deletePlaylist(playlistId)
+        dao.deletePlaylistWithTracks(playlistId)
     }
 
     override suspend fun getPlaylist(playlistId: Long): Playlist? =
@@ -45,7 +44,7 @@ internal class PlaylistsRepositoryImpl(
         dao.getTracks(playlistId).map { list -> list.map { it.toTrack() } }
 
     override suspend fun addTrack(playlistId: Long, track: Track) {
-        dao.insertTrack(track.toPlaylistTrackEntity(playlistId))
+        dao.insertTrackIntoPlaylist(track.toPlaylistTrackEntity(playlistId))
     }
 
     override suspend fun removeTrack(playlistId: Long, trackId: String) {

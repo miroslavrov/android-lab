@@ -1,6 +1,7 @@
 package com.example.myapplication.data
 
 import android.content.Context
+import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -8,7 +9,15 @@ import com.example.myapplication.domain.Track
 import com.example.myapplication.domain.TrackHistory
 import kotlinx.coroutines.flow.first
 
-private val Context.historyDataStore by preferencesDataStore(name = "playlist_maker_history")
+private const val HISTORY_STORE = "playlist_maker_history"
+private const val HISTORY_PREF = "history_tracks"
+
+private val Context.historyDataStore by preferencesDataStore(
+    name = HISTORY_STORE,
+    produceMigrations = { context ->
+        listOf(SharedPreferencesMigration(context, HISTORY_STORE, setOf(HISTORY_PREF)))
+    }
+)
 
 internal class SearchHistory(context: Context, storage: Storage) : TrackHistory {
     private val tracksById = storage.tracks.associateBy(TrackDto::trackId)
@@ -22,14 +31,12 @@ internal class SearchHistory(context: Context, storage: Storage) : TrackHistory 
     }
 
     override suspend fun addTrack(track: Track) {
-        val currentHistory = getHistory().toMutableList()
-        currentHistory.removeAll { it.trackId == track.trackId }
-        currentHistory.add(0, track)
-        if (currentHistory.size > 10) {
-            currentHistory.removeAt(currentHistory.lastIndex)
+        dataStore.edit { prefs ->
+            val previousIds = prefs[HISTORY_KEY].orEmpty()
+                .split(',')
+                .filter { it != track.trackId && it in tracksById }
+            prefs[HISTORY_KEY] = (listOf(track.trackId) + previousIds).take(10).joinToString(",")
         }
-        val newString = currentHistory.joinToString(",") { it.trackId }
-        dataStore.edit { prefs -> prefs[HISTORY_KEY] = newString }
     }
 
     override suspend fun clearHistory() {
@@ -37,6 +44,6 @@ internal class SearchHistory(context: Context, storage: Storage) : TrackHistory 
     }
 
     private companion object {
-        val HISTORY_KEY = stringPreferencesKey("history_tracks")
+        val HISTORY_KEY = stringPreferencesKey(HISTORY_PREF)
     }
 }

@@ -5,7 +5,6 @@ import com.example.myapplication.data.db.FavoriteTrackEntity
 import com.example.myapplication.domain.FavoritesRepository
 import com.example.myapplication.domain.Track
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 internal class FavoritesRepositoryImpl(
@@ -18,11 +17,7 @@ internal class FavoritesRepositoryImpl(
     override fun isFavorite(trackId: String): Flow<Boolean> = dao.isFavorite(trackId)
 
     override suspend fun toggleFavorite(track: Track) {
-        if (dao.isFavorite(track.trackId).first()) {
-            dao.delete(track.trackId)
-        } else {
-            dao.insert(track.toEntity())
-        }
+        dao.toggle(track.toEntity())
     }
 
     override suspend fun removeFavorite(trackId: String) {
