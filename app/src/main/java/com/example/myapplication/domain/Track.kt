@@ -1,4 +1,4 @@
-package com.example.myapplication.model
+package com.example.myapplication.domain
 
 data class Track(
     val trackId: String,
