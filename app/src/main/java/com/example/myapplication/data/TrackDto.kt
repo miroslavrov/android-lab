@@ -8,7 +8,8 @@ internal data class TrackDto(
     val trackName: String,
     val artistName: String,
     val trackTimeMillis: Long,
-    val artworkUrl: String
+    val artworkUrl: String,
+    val previewUrl: String
 ) {
     fun toTrack(): Track {
         val totalSeconds = trackTimeMillis / 1000
@@ -17,7 +18,8 @@ internal data class TrackDto(
             trackName = trackName,
             artistName = artistName,
             trackTime = String.format(Locale.ROOT, "%02d:%02d", totalSeconds / 60, totalSeconds % 60),
-            artworkUrl = artworkUrl
+            artworkUrl = artworkUrl,
+            previewUrl = previewUrl
         )
     }
 }

@@ -20,7 +20,18 @@ fun PlaylistHost(
             }
         }
         composable(Screen.SEARCH.name) {
-            SearchScreen(onBack = onBack, isDark = isDarkTheme)
+            SearchScreen(
+                onBack = onBack,
+                isDark = isDarkTheme,
+                onOpenPlayer = { track -> navController.navigate("${Screen.PLAYER.name}/${track.trackId}") }
+            )
+        }
+        composable("${Screen.PLAYER.name}/{trackId}") { entry ->
+            PlayerScreen(
+                trackId = entry.arguments?.getString("trackId").orEmpty(),
+                onBack = onBack,
+                isDark = isDarkTheme
+            )
         }
         composable(Screen.MEDIA_LIBRARY.name) {
             MediaLibraryScreen(onBack = onBack)

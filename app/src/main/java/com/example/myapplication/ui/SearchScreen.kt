@@ -64,6 +64,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SearchScreen(
     onBack: () -> Unit,
     isDark: Boolean,
+    onOpenPlayer: (Track) -> Unit,
     viewModel: SearchViewModel = koinViewModel()
 ) {
     val searchQuery by viewModel.query.collectAsStateWithLifecycle()
@@ -185,7 +186,10 @@ fun SearchScreen(
                             TrackList(
                                 tracks = historyTracks,
                                 isDark = isDark,
-                                onTrackClick = viewModel::rememberTrack,
+                                onTrackClick = { track ->
+                                    viewModel.rememberTrack(track)
+                                    onOpenPlayer(track)
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                             SearchButton(
@@ -213,7 +217,10 @@ fun SearchScreen(
                         TrackList(
                             tracks = state.tracks,
                             isDark = isDark,
-                            onTrackClick = viewModel::rememberTrack,
+                            onTrackClick = { track ->
+                                viewModel.rememberTrack(track)
+                                onOpenPlayer(track)
+                            },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
