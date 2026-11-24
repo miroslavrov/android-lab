@@ -39,9 +39,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,13 +66,13 @@ fun SearchScreen(
     isDark: Boolean,
     viewModel: SearchViewModel = koinViewModel()
 ) {
-    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val searchQuery by viewModel.query.collectAsStateWithLifecycle()
     val searchState by viewModel.searchState.collectAsStateWithLifecycle()
     val historyTracks by viewModel.history.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     val onSearch = {
         focusManager.clearFocus()
-        viewModel.search(searchQuery)
+        viewModel.search()
     }
 
     Scaffold(
@@ -143,10 +140,7 @@ fun SearchScreen(
                         }
                         BasicTextField(
                             value = searchQuery,
-                            onValueChange = {
-                                searchQuery = it
-                                viewModel.resetSearch()
-                            },
+                            onValueChange = viewModel::updateQuery,
                             singleLine = true,
                             textStyle = TextStyle(
                                 fontSize = 16.sp,
@@ -165,8 +159,7 @@ fun SearchScreen(
                             modifier = Modifier
                                 .size(18.dp)
                                 .clickable(role = Role.Button) {
-                                    searchQuery = ""
-                                    viewModel.resetSearch()
+                                    viewModel.updateQuery("")
                                     focusManager.clearFocus()
                                 }
                         )
