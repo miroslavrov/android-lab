@@ -1,5 +1,6 @@
 package com.example.myapplication.di
 
+import android.net.ConnectivityManager
 import com.example.myapplication.data.SearchHistory
 import com.example.myapplication.data.Storage
 import com.example.myapplication.data.TracksRepositoryImpl
@@ -12,7 +13,10 @@ import org.koin.dsl.module
 
 internal val searchModule = module {
     single { Storage() }
-    single<TracksRepository> { TracksRepositoryImpl(get()) }
+    single<TracksRepository> {
+        val connectivity = androidContext().getSystemService(ConnectivityManager::class.java)
+        TracksRepositoryImpl(get()) { connectivity?.activeNetwork != null }
+    }
     single<TrackHistory> { SearchHistory(androidContext(), get()) }
-    viewModel { SearchViewModel(get(), get()) }
+    viewModel { SearchViewModel(get(), get(), get()) }
 }
