@@ -2,6 +2,14 @@
 
 Учебное Android-приложение на Kotlin и Jetpack Compose. В этой версии доступны главный экран, настройки, вкладки медиатеки и поиск по локальному каталогу треков.
 
+## Версии
+
+- Android Studio — последняя стабильная (проект собран на Android Gradle Plugin 9.4.1)
+- Kotlin — 2.2.10
+- Android SDK Platform — 35
+- Минимальная версия Android — 7.0 (API 24)
+- JDK — 25
+
 ## Сборка
 
 Нужны Android SDK Platform 35 и JDK 25 для Gradle. Минимальная версия Android — 7.0 (API 24).
