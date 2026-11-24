@@ -1,25 +1,27 @@
 package com.example.myapplication.data
 
 import android.content.Context
-import android.content.SharedPreferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import com.example.myapplication.domain.Track
 import com.example.myapplication.domain.TrackHistory
+import kotlinx.coroutines.flow.first
+
+private val Context.historyDataStore by preferencesDataStore(name = "playlist_maker_history")
 
 internal class SearchHistory(context: Context, storage: Storage) : TrackHistory {
     private val tracksById = storage.tracks.associateBy(TrackDto::trackId)
-    private val sharedPreferences: SharedPreferences =
-        context.getSharedPreferences("playlist_maker_history", Context.MODE_PRIVATE)
+    private val dataStore = context.historyDataStore
 
-    override fun getHistory(): List<Track> {
-        val savedString = sharedPreferences.getString("history_tracks", "") ?: ""
+    override suspend fun getHistory(): List<Track> {
+        val savedString = dataStore.data.first()[HISTORY_KEY].orEmpty()
         if (savedString.isEmpty()) return emptyList()
         val ids = savedString.split(",")
-        return ids.mapNotNull { id ->
-            tracksById[id]?.toTrack()
-        }
+        return ids.mapNotNull { id -> tracksById[id]?.toTrack() }
     }
 
-    override fun addTrack(track: Track) {
+    override suspend fun addTrack(track: Track) {
         val currentHistory = getHistory().toMutableList()
         currentHistory.removeAll { it.trackId == track.trackId }
         currentHistory.add(0, track)
@@ -27,10 +29,14 @@ internal class SearchHistory(context: Context, storage: Storage) : TrackHistory 
             currentHistory.removeAt(currentHistory.lastIndex)
         }
         val newString = currentHistory.joinToString(",") { it.trackId }
-        sharedPreferences.edit().putString("history_tracks", newString).apply()
+        dataStore.edit { prefs -> prefs[HISTORY_KEY] = newString }
     }
 
-    override fun clearHistory() {
-        sharedPreferences.edit().remove("history_tracks").apply()
+    override suspend fun clearHistory() {
+        dataStore.edit { prefs -> prefs.remove(HISTORY_KEY) }
+    }
+
+    private companion object {
+        val HISTORY_KEY = stringPreferencesKey("history_tracks")
     }
 }

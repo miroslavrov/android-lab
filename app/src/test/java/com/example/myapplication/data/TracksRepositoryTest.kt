@@ -1,5 +1,6 @@
 package com.example.myapplication.data
 
+import com.example.myapplication.domain.NetworkClient
 import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -9,7 +10,7 @@ import org.junit.Test
 class TracksRepositoryTest {
     @Test
     fun matchesArtistAndTrackNameIgnoringCase() = runTest {
-        val repository = TracksRepositoryImpl(Storage()) { true }
+        val repository = TracksRepositoryImpl(Storage(), NetworkClient { true })
 
         val byArtist = repository.searchTracks("  nIrVaNa  ").single()
         val byTitle = repository.searchTracks("TEEN SPIRIT").single()
@@ -21,7 +22,7 @@ class TracksRepositoryTest {
 
     @Test
     fun returnsEmptyListForBlankAndUnmatchedQueries() = runTest {
-        val repository = TracksRepositoryImpl(Storage()) { true }
+        val repository = TracksRepositoryImpl(Storage(), NetworkClient { true })
 
         assertTrue(repository.searchTracks("  ").isEmpty())
         assertTrue(repository.searchTracks("unknown track").isEmpty())
@@ -29,7 +30,7 @@ class TracksRepositoryTest {
 
     @Test
     fun reportsAnIoFailureWhenOffline() = runTest {
-        val repository = TracksRepositoryImpl(Storage()) { false }
+        val repository = TracksRepositoryImpl(Storage(), NetworkClient { false })
 
         val result = runCatching { repository.searchTracks("Nirvana") }
 

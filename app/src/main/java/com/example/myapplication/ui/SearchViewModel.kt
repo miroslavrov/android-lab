@@ -26,10 +26,14 @@ class SearchViewModel(
     private val _searchState = MutableStateFlow<SearchState>(SearchState.Initial)
     val searchState = _searchState.asStateFlow()
 
-    private val _history = MutableStateFlow(trackHistory.getHistory())
+    private val _history = MutableStateFlow<List<Track>>(emptyList())
     val history = _history.asStateFlow()
 
     private var searchJob: Job? = null
+
+    init {
+        viewModelScope.launch { _history.value = trackHistory.getHistory() }
+    }
 
     fun updateQuery(value: String) {
         if (query.value == value) return
@@ -58,13 +62,17 @@ class SearchViewModel(
     }
 
     fun rememberTrack(track: Track) {
-        trackHistory.addTrack(track)
-        _history.value = trackHistory.getHistory()
+        viewModelScope.launch {
+            trackHistory.addTrack(track)
+            _history.value = trackHistory.getHistory()
+        }
     }
 
     fun clearHistory() {
-        trackHistory.clearHistory()
-        _history.value = emptyList()
+        viewModelScope.launch {
+            trackHistory.clearHistory()
+            _history.value = emptyList()
+        }
     }
 
     private companion object {

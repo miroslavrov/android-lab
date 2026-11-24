@@ -103,9 +103,9 @@ class SearchViewModelTest {
             override suspend fun searchTracks(query: String) = search(query)
         }
         val history = object : TrackHistory {
-            override fun getHistory(): List<Track> = emptyList()
-            override fun addTrack(track: Track) = Unit
-            override fun clearHistory() = Unit
+            override suspend fun getHistory(): List<Track> = emptyList()
+            override suspend fun addTrack(track: Track) = Unit
+            override suspend fun clearHistory() = Unit
         }
         return SearchViewModel(repository, history, savedState, dispatcher)
     }

@@ -34,7 +34,23 @@ fun PlaylistHost(
             )
         }
         composable(Screen.MEDIA_LIBRARY.name) {
-            MediaLibraryScreen(onBack = onBack)
+            MediaLibraryScreen(
+                onBack = onBack,
+                isDark = isDarkTheme,
+                onOpenPlayer = { track -> navController.navigate("${Screen.PLAYER.name}/${track.trackId}") },
+                onOpenPlaylist = { id -> navController.navigate("${Screen.PLAYLIST_DETAILS.name}/$id") },
+                onCreatePlaylist = { navController.navigate(Screen.CREATE_PLAYLIST.name) }
+            )
+        }
+        composable(Screen.CREATE_PLAYLIST.name) {
+            CreatePlaylistScreen(onBack = onBack)
+        }
+        composable("${Screen.PLAYLIST_DETAILS.name}/{playlistId}") { entry ->
+            PlaylistDetailsScreen(
+                playlistId = entry.arguments?.getString("playlistId")?.toLongOrNull() ?: 0L,
+                onBack = onBack,
+                isDark = isDarkTheme
+            )
         }
         composable(Screen.SETTINGS.name) {
             SettingsScreen(
