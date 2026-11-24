@@ -2,22 +2,24 @@ package com.example.myapplication.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.example.myapplication.model.Track
+import com.example.myapplication.domain.Track
+import com.example.myapplication.domain.TrackHistory
 
-class SearchHistory(context: Context) {
+internal class SearchHistory(context: Context, storage: Storage) : TrackHistory {
+    private val tracksById = storage.tracks.associateBy(TrackDto::trackId)
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("playlist_maker_history", Context.MODE_PRIVATE)
 
-    fun getHistory(): List<Track> {
+    override fun getHistory(): List<Track> {
         val savedString = sharedPreferences.getString("history_tracks", "") ?: ""
         if (savedString.isEmpty()) return emptyList()
         val ids = savedString.split(",")
         return ids.mapNotNull { id ->
-            mockTracks.firstOrNull { it.trackId == id }
+            tracksById[id]?.toTrack()
         }
     }
 
-    fun addTrack(track: Track) {
+    override fun addTrack(track: Track) {
         val currentHistory = getHistory().toMutableList()
         currentHistory.removeAll { it.trackId == track.trackId }
         currentHistory.add(0, track)
@@ -28,7 +30,7 @@ class SearchHistory(context: Context) {
         sharedPreferences.edit().putString("history_tracks", newString).apply()
     }
 
-    fun clearHistory() {
+    override fun clearHistory() {
         sharedPreferences.edit().remove("history_tracks").apply()
     }
 }
