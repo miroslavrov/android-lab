@@ -58,8 +58,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.SearchHistory
-import com.example.myapplication.data.mockTracks
-import com.example.myapplication.model.Track
+import com.example.myapplication.data.Storage
+import com.example.myapplication.data.TrackDto
+import com.example.myapplication.domain.Track
 
 enum class SearchScreenState {
     CONTENT,
@@ -73,7 +74,9 @@ fun SearchScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val searchHistory = remember { SearchHistory(context) }
+    val storage = remember { Storage() }
+    val searchHistory = remember(context, storage) { SearchHistory(context, storage) }
+    val mockTracks = remember(storage) { storage.tracks.map(TrackDto::toTrack) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var historyTracks by remember { mutableStateOf(searchHistory.getHistory()) }
     var screenState by remember { mutableStateOf(SearchScreenState.CONTENT) }
