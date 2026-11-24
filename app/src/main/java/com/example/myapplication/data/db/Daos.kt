@@ -48,6 +48,20 @@ interface PlaylistDao {
             insertTrack(track)
         }
     }
+
+    @Query("SELECT * FROM playlist_tracks WHERE playlistId = :playlistId")
+    suspend fun getTracksOnce(playlistId: Long): List<PlaylistTrackEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTracks(tracks: List<PlaylistTrackEntity>)
+
+    @Transaction
+    suspend fun mergePlaylists(sourceId: Long, targetId: Long) {
+        val sourceTracks = getTracksOnce(sourceId)
+        insertTracks(sourceTracks.map { it.copy(playlistId = targetId) })
+        deleteTracksOfPlaylist(sourceId)
+        deletePlaylist(sourceId)
+    }
 }
 
 @Dao

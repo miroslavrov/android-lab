@@ -51,6 +51,10 @@ internal class PlaylistsRepositoryImpl(
         dao.deleteTrack(playlistId, trackId)
     }
 
+    override suspend fun mergePlaylists(sourceId: Long, targetId: Long) {
+        dao.mergePlaylists(sourceId, targetId)
+    }
+
     private fun PlaylistEntity.toPlaylist(trackCount: Int) = Playlist(
         playlistId = playlistId,
         name = name,

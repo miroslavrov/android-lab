@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.Playlist
 import com.example.myapplication.domain.PlaylistsRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -17,5 +19,15 @@ class PlaylistsViewModel(
 
     fun deletePlaylist(playlistId: Long) {
         viewModelScope.launch { playlistsRepository.deletePlaylist(playlistId) }
+    }
+
+    private val _mergeMessage = MutableSharedFlow<String>()
+    val mergeMessage: SharedFlow<String> = _mergeMessage
+
+    fun mergePlaylists(source: Playlist, target: Playlist) {
+        viewModelScope.launch {
+            playlistsRepository.mergePlaylists(source.playlistId, target.playlistId)
+            _mergeMessage.emit("${source.name} слит с ${target.name}")
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.myapplication.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -21,11 +22,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,7 +50,7 @@ import com.example.myapplication.R
 import com.example.myapplication.domain.Playlist
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistsScreen(
     isDark: Boolean,
@@ -52,7 +58,16 @@ fun PlaylistsScreen(
     viewModel: PlaylistsViewModel = koinViewModel()
 ) {
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
+    var actionPlaylist by remember { mutableStateOf<Playlist?>(null) }
     var deleteCandidate by remember { mutableStateOf<Playlist?>(null) }
+    var mergeSource by remember { mutableStateOf<Playlist?>(null) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.mergeMessage.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     if (playlists.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -71,7 +86,7 @@ fun PlaylistsScreen(
                         .fillMaxWidth()
                         .combinedClickable(
                             onClick = { onOpenPlaylist(playlist.playlistId) },
-                            onLongClick = { deleteCandidate = playlist }
+                            onLongClick = { actionPlaylist = playlist }
                         )
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -117,6 +132,34 @@ fun PlaylistsScreen(
         }
     }
 
+    actionPlaylist?.let { playlist ->
+        AlertDialog(
+            onDismissRequest = { actionPlaylist = null },
+            title = { Text(playlist.name) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        deleteCandidate = playlist
+                        actionPlaylist = null
+                    }
+                ) { Text(stringResource(R.string.playlist_delete_title)) }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            mergeSource = playlist
+                            actionPlaylist = null
+                        }
+                    ) { Text(stringResource(R.string.playlist_merge_action)) }
+                    TextButton(onClick = { actionPlaylist = null }) {
+                        Text(stringResource(R.string.playlist_delete_cancel))
+                    }
+                }
+            }
+        )
+    }
+
     deleteCandidate?.let { playlist ->
         AlertDialog(
             onDismissRequest = { deleteCandidate = null },
@@ -136,6 +179,59 @@ fun PlaylistsScreen(
                 }
             }
         )
+    }
+
+    mergeSource?.let { source ->
+        ModalBottomSheet(
+            onDismissRequest = { mergeSource = null },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Text(
+                text = stringResource(R.string.playlist_merge_title),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            LazyColumn {
+                items(
+                    playlists.filter { it.playlistId != source.playlistId },
+                    key = { it.playlistId }
+                ) { target ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.mergePlaylists(source, target)
+                                mergeSource = null
+                            }
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QueueMusic,
+                            contentDescription = null,
+                            tint = Color(0xFFAEAFB4),
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = target.name,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "${target.trackCount} ${pluralTracks(target.trackCount)}",
+                                fontSize = 13.sp,
+                                color = Color(0xFFAEAFB4)
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
     }
 }
 

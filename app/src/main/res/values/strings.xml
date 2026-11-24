@@ -41,4 +41,6 @@
     <string name="playlist_delete_confirm">Да</string>
     <string name="playlist_delete_cancel">Нет</string>
     <string name="playlist_tracks_empty">В плейлисте нет треков</string>
+    <string name="playlist_merge_title">Слить с плейлистом</string>
+    <string name="playlist_merge_action">Слить</string>
 </resources>
