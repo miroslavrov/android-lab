@@ -11,4 +11,14 @@
     <string name="settings_no_external_app">Нет приложения для этого действия</string>
     <string name="settings_share_url" translatable="false">https://practicum.yandex.ru/android-developer/</string>
     <string name="settings_agreement_url" translatable="false">https://yandex.ru/legal/praktikum_offer/</string>
+    <string name="search_title">Поиск</string>
+    <string name="search_action">Найти треки</string>
+    <string name="search_clear">Очистить запрос</string>
+    <string name="search_history">Вы искали</string>
+    <string name="search_clear_history">Очистить историю</string>
+    <string name="search_no_results">Ничего не нашлось</string>
+    <string name="search_connection_title">Проблема со связью</string>
+    <string name="search_connection_description">Загрузка не удалась. Проверьте подключение к интернету</string>
+    <string name="search_retry">Обновить</string>
+    <string name="search_track_separator" translatable="false">" • "</string>
 </resources>

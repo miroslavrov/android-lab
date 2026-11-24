@@ -20,7 +20,7 @@ fun PlaylistHost(
             }
         }
         composable(Screen.SEARCH.name) {
-            SearchScreen(onBack = onBack)
+            SearchScreen(onBack = onBack, isDark = isDarkTheme)
         }
         composable(Screen.MEDIA_LIBRARY.name) {
             MediaLibraryScreen(onBack = onBack)
