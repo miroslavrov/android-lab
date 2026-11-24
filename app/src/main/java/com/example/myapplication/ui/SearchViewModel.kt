@@ -1,5 +1,6 @@
 package com.example.myapplication.ui
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.Track
@@ -17,8 +18,11 @@ import kotlinx.coroutines.withContext
 class SearchViewModel(
     private val tracksRepository: TracksRepository,
     private val trackHistory: TrackHistory,
+    private val savedStateHandle: SavedStateHandle,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
+    val query = savedStateHandle.getStateFlow(SEARCH_QUERY, "")
+
     private val _searchState = MutableStateFlow<SearchState>(SearchState.Initial)
     val searchState = _searchState.asStateFlow()
 
@@ -27,13 +31,20 @@ class SearchViewModel(
 
     private var searchJob: Job? = null
 
-    fun search(query: String) {
+    fun updateQuery(value: String) {
+        if (query.value == value) return
+
+        savedStateHandle[SEARCH_QUERY] = value
         searchJob?.cancel()
-        val expression = query.trim()
-        if (expression.isEmpty()) {
-            resetSearch()
-            return
-        }
+        searchJob = null
+        _searchState.value = SearchState.Initial
+    }
+
+    fun search() {
+        val expression = query.value.trim()
+        if (expression.isEmpty()) return
+
+        searchJob?.cancel()
 
         _searchState.value = SearchState.Searching
         searchJob = viewModelScope.launch {
@@ -46,12 +57,6 @@ class SearchViewModel(
         }
     }
 
-    fun resetSearch() {
-        searchJob?.cancel()
-        searchJob = null
-        _searchState.value = SearchState.Initial
-    }
-
     fun rememberTrack(track: Track) {
         trackHistory.addTrack(track)
         _history.value = trackHistory.getHistory()
@@ -60,5 +65,9 @@ class SearchViewModel(
     fun clearHistory() {
         trackHistory.clearHistory()
         _history.value = emptyList()
+    }
+
+    private companion object {
+        const val SEARCH_QUERY = "search_query"
     }
 }
