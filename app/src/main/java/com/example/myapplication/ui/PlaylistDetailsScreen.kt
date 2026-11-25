@@ -155,7 +155,7 @@ fun PlaylistDetailsScreen(
                 )
             }
             Text(
-                text = "${tracks.size} ${pluralTracks(tracks.size)}",
+                text = playlistTrackCountText(tracks.size),
                 fontSize = 14.sp,
                 color = Color(0xFFAEAFB4),
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -201,7 +201,7 @@ fun PlaylistDetailsScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "${track.artistName} • ${track.trackTime}",
+                                    text = stringResource(R.string.track_artist_duration, track.artistName, track.trackTime),
                                     fontSize = 13.sp,
                                     color = Color(0xFFAEAFB4),
                                     maxLines = 1,

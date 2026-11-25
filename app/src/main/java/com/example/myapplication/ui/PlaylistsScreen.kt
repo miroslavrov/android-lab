@@ -1,5 +1,6 @@
 package com.example.myapplication.ui
 
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,7 +40,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myapplication.R
 import com.example.myapplication.domain.Playlist
+import java.util.Locale
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -62,9 +66,11 @@ fun PlaylistsScreen(
     var deleteCandidate by remember { mutableStateOf<Playlist?>(null) }
     var mergeSource by remember { mutableStateOf<Playlist?>(null) }
     val context = LocalContext.current
+    val resources = LocalResources.current
 
-    LaunchedEffect(Unit) {
-        viewModel.mergeMessage.collect { message ->
+    LaunchedEffect(context, resources) {
+        viewModel.mergedPlaylists.collect { (sourceName, targetName) ->
+            val message = resources.getString(R.string.playlist_merge_success, sourceName, targetName)
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
@@ -116,7 +122,7 @@ fun PlaylistsScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "${playlist.trackCount} ${pluralTracks(playlist.trackCount)}",
+                            text = playlistTrackCountText(playlist.trackCount),
                             fontSize = 13.sp,
                             color = Color(0xFFAEAFB4)
                         )
@@ -222,7 +228,7 @@ fun PlaylistsScreen(
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "${target.trackCount} ${pluralTracks(target.trackCount)}",
+                                text = playlistTrackCountText(target.trackCount),
                                 fontSize = 13.sp,
                                 color = Color(0xFFAEAFB4)
                             )
@@ -235,13 +241,16 @@ fun PlaylistsScreen(
     }
 }
 
-internal fun pluralTracks(count: Int): String {
-    val mod100 = count % 100
-    val mod10 = count % 10
-    return when {
-        mod100 in 11..14 -> "треков"
-        mod10 == 1 -> "трек"
-        mod10 in 2..4 -> "трека"
-        else -> "треков"
+@Composable
+internal fun playlistTrackCountText(count: Int): String {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    // The interface is Russian on devices that use another system language.
+    val resources = remember(context, configuration) {
+        val russianConfiguration = Configuration(configuration).apply {
+            setLocale(Locale.forLanguageTag("ru"))
+        }
+        context.createConfigurationContext(russianConfiguration).resources
     }
+    return resources.getQuantityString(R.plurals.playlist_track_count, count, count)
 }

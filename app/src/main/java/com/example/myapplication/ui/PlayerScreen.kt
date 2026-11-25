@@ -250,7 +250,7 @@ fun PlayerScreen(
                                     color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Text(
-                                    text = "${playlist.trackCount} ${pluralTracks(playlist.trackCount)}",
+                                    text = playlistTrackCountText(playlist.trackCount),
                                     fontSize = 13.sp,
                                     color = Color(0xFFAEAFB4)
                                 )

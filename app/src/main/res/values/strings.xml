@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="ru">
     <string name="app_name">Playlist Maker</string>
     <string name="navigate_back">Назад</string>
     <string name="settings_title">Настройки</string>
@@ -23,6 +23,7 @@
     <string name="search_server_description">Не удалось загрузить результаты. Код ошибки: %1$d.</string>
     <string name="search_retry">Обновить</string>
     <string name="search_track_separator" translatable="false">" • "</string>
+    <string name="track_artist_duration" translatable="false">%1$s • %2$s</string>
     <string name="player_play">Воспроизвести</string>
     <string name="player_pause">Пауза</string>
     <string name="player_retry_message">Не удалось воспроизвести трек. Нажмите кнопку воспроизведения, чтобы повторить.</string>
@@ -46,4 +47,11 @@
     <string name="playlist_tracks_empty">В плейлисте нет треков</string>
     <string name="playlist_merge_title">Слить с плейлистом</string>
     <string name="playlist_merge_action">Слить</string>
+    <string name="playlist_merge_success">%1$s слит с %2$s</string>
+    <plurals name="playlist_track_count">
+        <item quantity="one">%d трек</item>
+        <item quantity="few">%d трека</item>
+        <item quantity="many">%d треков</item>
+        <item quantity="other">%d трека</item>
+    </plurals>
 </resources>

@@ -21,13 +21,13 @@ class PlaylistsViewModel(
         viewModelScope.launch { playlistsRepository.deletePlaylist(playlistId) }
     }
 
-    private val _mergeMessage = MutableSharedFlow<String>()
-    val mergeMessage: SharedFlow<String> = _mergeMessage
+    private val _mergedPlaylists = MutableSharedFlow<Pair<String, String>>()
+    val mergedPlaylists: SharedFlow<Pair<String, String>> = _mergedPlaylists
 
     fun mergePlaylists(source: Playlist, target: Playlist) {
         viewModelScope.launch {
             playlistsRepository.mergePlaylists(source.playlistId, target.playlistId)
-            _mergeMessage.emit("${source.name} слит с ${target.name}")
+            _mergedPlaylists.emit(source.name to target.name)
         }
     }
 }
