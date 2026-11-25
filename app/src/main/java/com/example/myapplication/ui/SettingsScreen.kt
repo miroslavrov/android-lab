@@ -137,8 +137,8 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_agreement),
                 icon = Icons.Default.Info,
                 onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://yandex.ru/legal/practicum_offer/"))
-                    context.startActivity(intent)
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(agreementUrl))
+                    openExternalApp(intent)
                 }
             )
         }
