@@ -225,12 +225,19 @@ fun SearchScreen(
                     }
                 }
 
-                SearchState.Fail -> {
+                is SearchState.Fail -> {
+                    val statusCode = state.statusCode
                     SearchMessage(
                         icon = Icons.Default.SignalWifiOff,
-                        title = stringResource(R.string.search_connection_title),
-                        description = stringResource(R.string.search_connection_description),
-                        onRetry = onSearch
+                        title = stringResource(
+                            if (statusCode == null) R.string.search_connection_title else R.string.search_server_title
+                        ),
+                        description = if (statusCode == null) {
+                            stringResource(R.string.search_connection_description)
+                        } else {
+                            stringResource(R.string.search_server_description, statusCode)
+                        },
+                        onRetry = viewModel::retry
                     )
                 }
             }

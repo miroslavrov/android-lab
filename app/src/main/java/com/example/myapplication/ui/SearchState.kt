@@ -6,5 +6,5 @@ sealed interface SearchState {
     data object Initial : SearchState
     data object Searching : SearchState
     data class Success(val tracks: List<Track>) : SearchState
-    data object Fail : SearchState
+    data class Fail(val statusCode: Int? = null) : SearchState
 }

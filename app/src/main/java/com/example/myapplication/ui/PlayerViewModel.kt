@@ -34,32 +34,29 @@ class PlayerViewModel(
     private val _playbackFailed = MutableStateFlow(false)
     val playbackFailed = _playbackFailed.asStateFlow()
 
-    private val _isFavorite = MutableStateFlow(false)
-    val isFavorite = _isFavorite.asStateFlow()
-
     val playlists: StateFlow<List<Playlist>> = playlistsRepository.getPlaylists()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private var favoriteJob: Job? = null
+    private var loadJob: Job? = null
     private var mediaPlayer: MediaPlayer? = null
     private var prepared = false
 
     fun load(trackId: String) {
         if (_track.value?.trackId == trackId) return
 
-        favoriteJob?.cancel()
+        loadJob?.cancel()
         releasePlayer()
-        _isFavorite.value = false
         _playbackFailed.value = false
 
-        val track = tracksRepository.getTrack(trackId)
-        _track.value = track
-        if (track == null) return
-
-        favoriteJob = viewModelScope.launch {
-            favoritesRepository.isFavorite(trackId).collect { _isFavorite.value = it }
+        _track.value = null
+        loadJob = viewModelScope.launch {
+            val track = tracksRepository.getTrack(trackId) ?: return@launch
+            _track.value = track
+            preparePlayer(track)
+            favoritesRepository.isFavorite(trackId).collect { isFavorite ->
+                _track.value = track.copy(isFavorite = isFavorite)
+            }
         }
-        preparePlayer(track)
     }
 
     private fun preparePlayer(track: Track) {

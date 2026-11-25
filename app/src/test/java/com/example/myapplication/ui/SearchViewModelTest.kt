@@ -1,10 +1,10 @@
 package com.example.myapplication.ui
 
 import androidx.lifecycle.SavedStateHandle
+import com.example.myapplication.domain.SearchServerException
 import com.example.myapplication.domain.Track
 import com.example.myapplication.domain.TrackHistory
 import com.example.myapplication.domain.TracksRepository
-import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -51,16 +51,16 @@ class SearchViewModelTest {
         val queries = mutableListOf<String>()
         val viewModel = newViewModel { query ->
             queries.add(query)
-            if (queries.size == 1) throw IOException()
+            if (queries.size == 1) throw SearchServerException(503)
             listOf(track)
         }
 
         viewModel.updateQuery(" Nirvana ")
         viewModel.search()
         advanceUntilIdle()
-        assertEquals(SearchState.Fail, viewModel.searchState.value)
+        assertEquals(SearchState.Fail(503), viewModel.searchState.value)
 
-        viewModel.search()
+        viewModel.retry()
         advanceUntilIdle()
         assertEquals(listOf("Nirvana", "Nirvana"), queries)
         assertEquals(SearchState.Success(listOf(track)), viewModel.searchState.value)
@@ -101,7 +101,7 @@ class SearchViewModelTest {
     ): SearchViewModel {
         val repository = object : TracksRepository {
             override suspend fun searchTracks(query: String) = search(query)
-            override fun getTrack(trackId: String): Track? = null
+            override suspend fun getTrack(trackId: String): Track? = null
         }
         val history = object : TrackHistory {
             override suspend fun getHistory(): List<Track> = emptyList()

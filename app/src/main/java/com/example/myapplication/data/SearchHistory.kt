@@ -5,6 +5,7 @@ import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.myapplication.data.db.TrackDao
 import com.example.myapplication.domain.Track
 import com.example.myapplication.domain.TrackHistory
 import kotlinx.coroutines.flow.first
@@ -19,22 +20,22 @@ private val Context.historyDataStore by preferencesDataStore(
     }
 )
 
-internal class SearchHistory(context: Context, storage: Storage) : TrackHistory {
-    private val tracksById = storage.tracks.associateBy(TrackDto::trackId)
+internal class SearchHistory(context: Context, private val dao: TrackDao) : TrackHistory {
     private val dataStore = context.historyDataStore
 
     override suspend fun getHistory(): List<Track> {
         val savedString = dataStore.data.first()[HISTORY_KEY].orEmpty()
         if (savedString.isEmpty()) return emptyList()
         val ids = savedString.split(",")
-        return ids.mapNotNull { id -> tracksById[id]?.toTrack() }
+        val stored = dao.findAll(ids).associateBy { it.trackId }
+        return ids.mapNotNull { stored[it]?.toTrack() }
     }
 
     override suspend fun addTrack(track: Track) {
         dataStore.edit { prefs ->
             val previousIds = prefs[HISTORY_KEY].orEmpty()
                 .split(',')
-                .filter { it != track.trackId && it in tracksById }
+                .filter { it.isNotBlank() && it != track.trackId }
             prefs[HISTORY_KEY] = (listOf(track.trackId) + previousIds).take(10).joinToString(",")
         }
     }

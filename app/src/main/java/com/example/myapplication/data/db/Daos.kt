@@ -5,11 +5,12 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlaylistDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert
     suspend fun insertPlaylist(playlist: PlaylistEntity): Long
 
     @Query("SELECT * FROM playlists ORDER BY name")
@@ -21,72 +22,65 @@ interface PlaylistDao {
     @Query("DELETE FROM playlists WHERE playlistId = :playlistId")
     suspend fun deletePlaylist(playlistId: Long)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTrack(track: PlaylistTrackEntity)
 
     @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId AND trackId = :trackId")
     suspend fun deleteTrack(playlistId: Long, trackId: String)
 
-    @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId")
-    suspend fun deleteTracksOfPlaylist(playlistId: Long)
-
-    @Query("SELECT * FROM playlist_tracks WHERE playlistId = :playlistId ORDER BY addedAt DESC")
-    fun getTracks(playlistId: Long): Flow<List<PlaylistTrackEntity>>
+    @Query("""
+        SELECT t.* FROM tracks t JOIN playlist_tracks p ON p.trackId = t.trackId
+        WHERE p.playlistId = :playlistId ORDER BY p.addedAt DESC
+    """)
+    fun getTracks(playlistId: Long): Flow<List<TrackEntity>>
 
     @Query("SELECT COUNT(*) FROM playlist_tracks WHERE playlistId = :playlistId")
     fun getTrackCount(playlistId: Long): Flow<Int>
 
     @Transaction
-    suspend fun deletePlaylistWithTracks(playlistId: Long) {
-        deleteTracksOfPlaylist(playlistId)
-        deletePlaylist(playlistId)
-    }
-
-    @Transaction
     suspend fun insertTrackIntoPlaylist(track: PlaylistTrackEntity) {
-        if (getPlaylist(track.playlistId) != null) {
-            insertTrack(track)
-        }
+        if (getPlaylist(track.playlistId) != null) insertTrack(track)
     }
 
-    @Query("SELECT * FROM playlist_tracks WHERE playlistId = :playlistId")
-    suspend fun getTracksOnce(playlistId: Long): List<PlaylistTrackEntity>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTracks(tracks: List<PlaylistTrackEntity>)
+    @Query("""
+        INSERT OR IGNORE INTO playlist_tracks (playlistId, trackId, addedAt)
+        SELECT :targetId, trackId, addedAt FROM playlist_tracks WHERE playlistId = :sourceId
+    """)
+    suspend fun copyTracks(sourceId: Long, targetId: Long)
 
     @Transaction
     suspend fun mergePlaylists(sourceId: Long, targetId: Long) {
-        val sourceTracks = getTracksOnce(sourceId)
-        insertTracks(sourceTracks.map { it.copy(playlistId = targetId) })
-        deleteTracksOfPlaylist(sourceId)
+        if (sourceId == targetId || getPlaylist(targetId) == null) return
+        copyTracks(sourceId, targetId)
         deletePlaylist(sourceId)
     }
 }
 
 @Dao
-interface FavoriteDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(track: FavoriteTrackEntity)
+interface TrackDao {
+    @Upsert(entity = TrackEntity::class)
+    suspend fun cache(tracks: List<TrackMetadata>)
 
-    @Query("DELETE FROM favorite_tracks WHERE trackId = :trackId")
-    suspend fun delete(trackId: String)
+    @Query("SELECT * FROM tracks WHERE trackId = :trackId")
+    suspend fun find(trackId: String): TrackEntity?
 
-    @Query("SELECT * FROM favorite_tracks ORDER BY addedAt DESC")
-    fun getAll(): Flow<List<FavoriteTrackEntity>>
+    @Query("SELECT * FROM tracks WHERE trackId IN (:ids)")
+    suspend fun findAll(ids: List<String>): List<TrackEntity>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM favorite_tracks WHERE trackId = :trackId)")
+    @Query("SELECT * FROM tracks WHERE isFavorite = 1 ORDER BY favoriteAddedAt DESC")
+    fun getFavorites(): Flow<List<TrackEntity>>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM tracks WHERE trackId = :trackId AND isFavorite = 1)")
     fun isFavorite(trackId: String): Flow<Boolean>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM favorite_tracks WHERE trackId = :trackId)")
-    suspend fun contains(trackId: String): Boolean
+    @Query("""
+        UPDATE tracks SET
+            favoriteAddedAt = CASE WHEN isFavorite = 1 THEN NULL ELSE :timestamp END,
+            isFavorite = NOT isFavorite
+        WHERE trackId = :trackId
+    """)
+    suspend fun toggleFavorite(trackId: String, timestamp: Long)
 
-    @Transaction
-    suspend fun toggle(track: FavoriteTrackEntity) {
-        if (contains(track.trackId)) {
-            delete(track.trackId)
-        } else {
-            insert(track)
-        }
-    }
+    @Query("UPDATE tracks SET isFavorite = 0, favoriteAddedAt = NULL WHERE trackId = :trackId")
+    suspend fun removeFavorite(trackId: String)
 }

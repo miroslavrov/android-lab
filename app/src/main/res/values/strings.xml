@@ -19,6 +19,8 @@
     <string name="search_no_results">Ничего не нашлось</string>
     <string name="search_connection_title">Проблема со связью</string>
     <string name="search_connection_description">Загрузка не удалась. Проверьте подключение к интернету</string>
+    <string name="search_server_title">Ошибка сервера</string>
+    <string name="search_server_description">Не удалось загрузить результаты. Код ошибки: %1$d.</string>
     <string name="search_retry">Обновить</string>
     <string name="search_track_separator" translatable="false">" • "</string>
     <string name="player_play">Воспроизвести</string>
@@ -26,6 +28,7 @@
     <string name="player_retry_message">Не удалось воспроизвести трек. Нажмите кнопку воспроизведения, чтобы повторить.</string>
     <string name="player_add_to_playlist">Добавить в плейлист</string>
     <string name="player_favorite">Добавить в избранное</string>
+    <string name="player_remove_favorite">Удалить из избранного</string>
     <string name="player_duration">Длительность</string>
     <string name="library_title">Медиатека</string>
     <string name="library_tab_favorites">Избранные треки</string>

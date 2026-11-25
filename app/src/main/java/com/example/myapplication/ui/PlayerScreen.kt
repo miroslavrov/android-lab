@@ -68,7 +68,7 @@ fun PlayerScreen(
     val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
     val playbackFailed by viewModel.playbackFailed.collectAsStateWithLifecycle()
     val positionMillis by viewModel.positionMillis.collectAsStateWithLifecycle()
-    val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
+    val isFavorite = track?.isFavorite == true
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
     var showPlaylistSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -172,7 +172,9 @@ fun PlayerScreen(
                 IconButton(onClick = viewModel::toggleFavorite) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = stringResource(R.string.player_favorite),
+                        contentDescription = stringResource(
+                            if (isFavorite) R.string.player_remove_favorite else R.string.player_favorite
+                        ),
                         tint = if (isFavorite) Color(0xFFF56B6C) else MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(28.dp)
                     )

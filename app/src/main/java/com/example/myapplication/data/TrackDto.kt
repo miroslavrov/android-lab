@@ -4,22 +4,24 @@ import com.example.myapplication.domain.Track
 import java.util.Locale
 
 internal data class TrackDto(
-    val trackId: String,
-    val trackName: String,
-    val artistName: String,
-    val trackTimeMillis: Long,
-    val artworkUrl: String,
-    val previewUrl: String
+    val trackId: Long?,
+    val trackName: String?,
+    val artistName: String?,
+    val trackTimeMillis: Long?,
+    val artworkUrl100: String?,
+    val previewUrl: String?
 ) {
-    fun toTrack(): Track {
-        val totalSeconds = trackTimeMillis / 1000
+    fun toTrack(): Track? {
+        val id = trackId ?: return null
+        val name = trackName?.takeIf { it.isNotBlank() } ?: return null
+        val totalSeconds = (trackTimeMillis ?: 0L).coerceAtLeast(0L) / 1000
         return Track(
-            trackId = trackId,
-            trackName = trackName,
-            artistName = artistName,
+            trackId = id.toString(),
+            trackName = name,
+            artistName = artistName.orEmpty(),
             trackTime = String.format(Locale.ROOT, "%02d:%02d", totalSeconds / 60, totalSeconds % 60),
-            artworkUrl = artworkUrl,
-            previewUrl = previewUrl
+            artworkUrl = artworkUrl100.orEmpty(),
+            previewUrl = previewUrl.orEmpty()
         )
     }
 }

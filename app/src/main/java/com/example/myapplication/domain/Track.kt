@@ -6,5 +6,6 @@ data class Track(
     val artistName: String,
     val trackTime: String,
     val artworkUrl: String = "",
-    val previewUrl: String = ""
+    val previewUrl: String = "",
+    val isFavorite: Boolean = false
 )
