@@ -6,6 +6,7 @@
     <string name="settings_share">Поделиться приложением</string>
     <string name="settings_contact_developer">Написать разработчикам</string>
     <string name="settings_agreement">Пользовательское соглашение</string>
+    <string name="settings_developer_email" translatable="false">playlistmaker@example.com</string>
     <string name="settings_email_subject">Сообщение разработчикам и разработчицам приложения Playlist Maker</string>
     <string name="settings_email_body">Спасибо разработчикам и разработчицам за крутое приложение!</string>
     <string name="settings_no_external_app">Нет приложения для этого действия</string>
