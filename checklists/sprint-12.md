@@ -4,12 +4,12 @@
 - [x] Главный экран с навигацией (поиск, медиатека, настройки), навигация в PlaylistHost
 - [x] Экран поиска: placeholder, лупа, очистка, состояния загрузки/результатов/ошибок, LazyColumn
 - [x] История поиска через DataStore (до 10 треков), кнопка «Очистить историю»
-- [x] Архитектура Data/Domain/UI: интерфейсы NetworkClient и TracksRepository, Storage как эмулятор сервера
+- [x] Архитектура Data/Domain/UI: интерфейсы NetworkClient и TracksRepository, iTunes Search API через Retrofit, повтор последнего неуспешного запроса
 - [x] Экран настроек: «Поделиться», «Написать разработчикам», «Пользовательское соглашение», тёмная тема
 - [x] Экран деталей трека/плеера: обложка, play/pause через MediaPlayer, таймер, избранное, добавление в плейлист через BottomSheet
 - [x] Медиатека: вкладки «Избранные треки» и «Плейлисты», FAB для нового плейлиста
 - [x] Создание плейлиста (имя + описание), экран деталей плейлиста
-- [x] Room: PlaylistEntity, PlaylistTrackEntity, FavoriteTrackEntity, DAO, AppDatabase
+- [x] Room: PlaylistEntity, PlaylistTrackEntity, TrackEntity с признаком избранного, DAO, AppDatabase и миграция 1 → 2
 - [x] DI через Koin, ViewModel для всех экранов, корутины и Flow
 
 ## Дополнительная фича
