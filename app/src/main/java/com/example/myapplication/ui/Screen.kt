@@ -4,5 +4,8 @@ enum class Screen {
     MAIN,
     SEARCH,
     MEDIA_LIBRARY,
-    SETTINGS
+    SETTINGS,
+    PLAYER,
+    CREATE_PLAYLIST,
+    PLAYLIST_DETAILS
 }

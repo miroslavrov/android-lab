@@ -47,7 +47,8 @@ fun SettingsScreen(
     val context = LocalContext.current
     val shareTitle = stringResource(R.string.settings_share)
     val shareUrl = stringResource(R.string.settings_share_url)
-    val email = stringResource(R.string.developer_email)
+    val configuredEmail = stringResource(R.string.developer_email).trim()
+    val email = configuredEmail.ifEmpty { stringResource(R.string.settings_developer_email) }
     val emailSubject = stringResource(R.string.settings_email_subject)
     val emailBody = stringResource(R.string.settings_email_body)
     val agreementUrl = stringResource(R.string.settings_agreement_url)
@@ -127,7 +128,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Email,
                 onClick = {
                     val mailto = Uri.parse(
-                        "mailto:${Uri.encode(email)}?subject=${Uri.encode(emailSubject)}&body=${Uri.encode(emailBody)}"
+                        "mailto:${Uri.encode(email, "@")}?subject=${Uri.encode(emailSubject)}&body=${Uri.encode(emailBody)}"
                     )
                     openExternalApp(Intent(Intent.ACTION_SENDTO, mailto))
                 }
@@ -137,8 +138,8 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_agreement),
                 icon = Icons.Default.Info,
                 onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://yandex.ru/legal/practicum_offer/"))
-                    context.startActivity(intent)
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(agreementUrl))
+                    openExternalApp(intent)
                 }
             )
         }

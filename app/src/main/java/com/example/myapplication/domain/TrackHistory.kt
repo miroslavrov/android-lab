@@ -1,7 +1,7 @@
 package com.example.myapplication.domain
 
 interface TrackHistory {
-    fun getHistory(): List<Track>
-    fun addTrack(track: Track)
-    fun clearHistory()
+    suspend fun getHistory(): List<Track>
+    suspend fun addTrack(track: Track)
+    suspend fun clearHistory()
 }

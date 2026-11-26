@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.SignalWifiOff
@@ -64,6 +63,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SearchScreen(
     onBack: () -> Unit,
     isDark: Boolean,
+    onOpenPlayer: (Track) -> Unit,
     viewModel: SearchViewModel = koinViewModel()
 ) {
     val searchQuery by viewModel.query.collectAsStateWithLifecycle()
@@ -185,7 +185,10 @@ fun SearchScreen(
                             TrackList(
                                 tracks = historyTracks,
                                 isDark = isDark,
-                                onTrackClick = viewModel::rememberTrack,
+                                onTrackClick = { track ->
+                                    viewModel.rememberTrack(track)
+                                    onOpenPlayer(track)
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                             SearchButton(
@@ -213,18 +216,28 @@ fun SearchScreen(
                         TrackList(
                             tracks = state.tracks,
                             isDark = isDark,
-                            onTrackClick = viewModel::rememberTrack,
+                            onTrackClick = { track ->
+                                viewModel.rememberTrack(track)
+                                onOpenPlayer(track)
+                            },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
 
-                SearchState.Fail -> {
+                is SearchState.Fail -> {
+                    val statusCode = state.statusCode
                     SearchMessage(
                         icon = Icons.Default.SignalWifiOff,
-                        title = stringResource(R.string.search_connection_title),
-                        description = stringResource(R.string.search_connection_description),
-                        onRetry = onSearch
+                        title = stringResource(
+                            if (statusCode == null) R.string.search_connection_title else R.string.search_server_title
+                        ),
+                        description = if (statusCode == null) {
+                            stringResource(R.string.search_connection_description)
+                        } else {
+                            stringResource(R.string.search_server_description, statusCode)
+                        },
+                        onRetry = viewModel::retry
                     )
                 }
             }
@@ -319,20 +332,14 @@ private fun TrackItem(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
+        TrackArtwork(
+            url = track.artworkUrl,
+            isDark = isDark,
+            cornerRadius = 2.dp,
+            placeholderSize = 24.dp,
             modifier = Modifier
                 .size(45.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(if (isDark) Color(0xFF2C2C2E) else Color(0xFFE6E8EB)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.MusicNote,
-                contentDescription = null,
-                tint = Color(0xFFAEAFB4),
-                modifier = Modifier.size(24.dp)
-            )
-        }
+        )
 
         Spacer(modifier = Modifier.width(12.dp))
 

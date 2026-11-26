@@ -3,6 +3,7 @@ package com.example.myapplication.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myapplication.domain.SearchServerException
 import com.example.myapplication.domain.Track
 import com.example.myapplication.domain.TrackHistory
 import com.example.myapplication.domain.TracksRepository
@@ -10,6 +11,7 @@ import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -26,10 +28,15 @@ class SearchViewModel(
     private val _searchState = MutableStateFlow<SearchState>(SearchState.Initial)
     val searchState = _searchState.asStateFlow()
 
-    private val _history = MutableStateFlow(trackHistory.getHistory())
+    private val _history = MutableStateFlow<List<Track>>(emptyList())
     val history = _history.asStateFlow()
 
     private var searchJob: Job? = null
+    private var lastFailedQuery: String? = null
+
+    init {
+        viewModelScope.launch { _history.value = trackHistory.getHistory() }
+    }
 
     fun updateQuery(value: String) {
         if (query.value == value) return
@@ -37,34 +44,47 @@ class SearchViewModel(
         savedStateHandle[SEARCH_QUERY] = value
         searchJob?.cancel()
         searchJob = null
+        lastFailedQuery = null
         _searchState.value = SearchState.Initial
     }
 
     fun search() {
         val expression = query.value.trim()
-        if (expression.isEmpty()) return
+        if (expression.isNotEmpty()) executeSearch(expression)
+    }
 
+    fun retry() {
+        lastFailedQuery?.let(::executeSearch)
+    }
+
+    private fun executeSearch(expression: String) {
         searchJob?.cancel()
-
+        lastFailedQuery = null
         _searchState.value = SearchState.Searching
         searchJob = viewModelScope.launch {
             try {
                 val tracks = withContext(ioDispatcher) { tracksRepository.searchTracks(expression) }
                 _searchState.value = SearchState.Success(tracks)
-            } catch (_: IOException) {
-                _searchState.value = SearchState.Fail
+            } catch (error: IOException) {
+                ensureActive()
+                lastFailedQuery = expression
+                _searchState.value = SearchState.Fail((error as? SearchServerException)?.statusCode)
             }
         }
     }
 
     fun rememberTrack(track: Track) {
-        trackHistory.addTrack(track)
-        _history.value = trackHistory.getHistory()
+        viewModelScope.launch {
+            trackHistory.addTrack(track)
+            _history.value = trackHistory.getHistory()
+        }
     }
 
     fun clearHistory() {
-        trackHistory.clearHistory()
-        _history.value = emptyList()
+        viewModelScope.launch {
+            trackHistory.clearHistory()
+            _history.value = emptyList()
+        }
     }
 
     private companion object {

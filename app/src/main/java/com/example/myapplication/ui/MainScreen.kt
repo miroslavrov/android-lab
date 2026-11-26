@@ -16,9 +16,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.R
 
 @Composable
 fun MainScreen(
@@ -35,7 +37,7 @@ fun MainScreen(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Playlist Maker",
+                text = stringResource(R.string.app_name),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -46,17 +48,17 @@ fun MainScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 MenuButton(
-                    text = "Поиск",
+                    text = stringResource(R.string.search_title),
                     onClick = { onNavigate(Screen.SEARCH) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 MenuButton(
-                    text = "Медиатека",
+                    text = stringResource(R.string.library_title),
                     onClick = { onNavigate(Screen.MEDIA_LIBRARY) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 MenuButton(
-                    text = "Настройки",
+                    text = stringResource(R.string.settings_title),
                     onClick = { onNavigate(Screen.SETTINGS) }
                 )
             }

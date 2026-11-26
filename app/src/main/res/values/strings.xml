@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="ru">
     <string name="app_name">Playlist Maker</string>
     <string name="navigate_back">Назад</string>
     <string name="settings_title">Настройки</string>
@@ -6,6 +6,7 @@
     <string name="settings_share">Поделиться приложением</string>
     <string name="settings_contact_developer">Написать разработчикам</string>
     <string name="settings_agreement">Пользовательское соглашение</string>
+    <string name="settings_developer_email" translatable="false">playlistmaker@example.com</string>
     <string name="settings_email_subject">Сообщение разработчикам и разработчицам приложения Playlist Maker</string>
     <string name="settings_email_body">Спасибо разработчикам и разработчицам за крутое приложение!</string>
     <string name="settings_no_external_app">Нет приложения для этого действия</string>
@@ -19,6 +20,39 @@
     <string name="search_no_results">Ничего не нашлось</string>
     <string name="search_connection_title">Проблема со связью</string>
     <string name="search_connection_description">Загрузка не удалась. Проверьте подключение к интернету</string>
+    <string name="search_server_title">Ошибка сервера</string>
+    <string name="search_server_description">Не удалось загрузить результаты. Код ошибки: %1$d.</string>
     <string name="search_retry">Обновить</string>
     <string name="search_track_separator" translatable="false">" • "</string>
+    <string name="track_artist_duration" translatable="false">%1$s • %2$s</string>
+    <string name="player_play">Воспроизвести</string>
+    <string name="player_pause">Пауза</string>
+    <string name="player_retry_message">Не удалось воспроизвести трек. Нажмите кнопку воспроизведения, чтобы повторить.</string>
+    <string name="player_add_to_playlist">Добавить в плейлист</string>
+    <string name="player_favorite">Добавить в избранное</string>
+    <string name="player_remove_favorite">Удалить из избранного</string>
+    <string name="player_duration">Длительность</string>
+    <string name="library_title">Медиатека</string>
+    <string name="library_tab_favorites">Избранные треки</string>
+    <string name="library_tab_playlists">Плейлисты</string>
+    <string name="favorites_empty">Ваша медиатека пуста</string>
+    <string name="playlists_empty">Вам пока не удалось создать ни одного плейлиста</string>
+    <string name="playlist_create_title">Новый плейлист</string>
+    <string name="playlist_name">Название*</string>
+    <string name="playlist_description">Описание</string>
+    <string name="playlist_create_button">Создать</string>
+    <string name="playlist_delete_title">Удалить плейлист</string>
+    <string name="playlist_delete_message">Хотите удалить плейлист «%1$s»?</string>
+    <string name="playlist_delete_confirm">Да</string>
+    <string name="playlist_delete_cancel">Нет</string>
+    <string name="playlist_tracks_empty">В плейлисте нет треков</string>
+    <string name="playlist_merge_title">Слить с плейлистом</string>
+    <string name="playlist_merge_action">Слить</string>
+    <string name="playlist_merge_success">%1$s слит с %2$s</string>
+    <plurals name="playlist_track_count">
+        <item quantity="one">%d трек</item>
+        <item quantity="few">%d трека</item>
+        <item quantity="many">%d треков</item>
+        <item quantity="other">%d трека</item>
+    </plurals>
 </resources>
